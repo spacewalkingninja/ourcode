@@ -204,8 +204,17 @@ def cyrify(text: str) -> str:
 
 
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--file":
+        with open(sys.argv[2], encoding="utf-8") as f:
+            text = f.read()
+        print(cyrify(text))
+        return
     if len(sys.argv) > 1:
         text = " ".join(sys.argv[1:])
+        print(cyrify(text))
+        return
+    if not sys.stdin.isatty():
+        text = sys.stdin.read()
         print(cyrify(text))
         return
     print("Cyrillic transliterator (Runglish). Ctrl+C or empty line to exit.\n")

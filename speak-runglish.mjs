@@ -15,18 +15,23 @@ const SpeakRunglishPlugin = async () => {
       if (text.startsWith("```") || text.startsWith("`")) return
 
       const stamp = Date.now()
-      const txtFile = `${tmpdir()}\\runglish_${stamp}.txt`
+      const inFile = `${tmpdir()}\\runglish_in_${stamp}.txt`
+      const outFile = `${tmpdir()}\\runglish_out_${stamp}.txt`
       const ps1File = `${tmpdir()}\\runglish_${stamp}.ps1`
-      const escaped = text.replace(/"/g, '\\"')
 
-      exec(`python "${cyrifyPath}" "${escaped}"`, {
+      // Write English text to file (no CLI length limits)
+      writeFileSync(inFile, text, "utf8")
+
+      // Pipe through cyrify.py via file
+      exec(`python "${cyrifyPath}" --file "${inFile}"`, {
         timeout: 5000, windowsHide: true, encoding: "utf8",
       }, (err, stdout) => {
+        try { unlinkSync(inFile) } catch {}
         if (err || !stdout) return
         const cyr = stdout.trim()
         if (!cyr) return
 
-        writeFileSync(txtFile, cyr, "utf8")
+        writeFileSync(outFile, cyr, "utf8")
 
         const psBody = `$v = New-Object -ComObject SAPI.SpVoice
 $voices = $v.GetVoices()
@@ -35,7 +40,7 @@ for ($i=0;$i -lt $voices.Count;$i++) {
     $v.Voice = $voices.Item($i); break
   }
 }
-$t = (Get-Content "${txtFile}" -Encoding UTF8 -Raw).Trim()
+$t = (Get-Content "${outFile}" -Encoding UTF8 -Raw).Trim()
 $v.Rate = -1
 $v.Speak($t) | Out-Null
 while ($v.Status.RunningState -eq 1) { Start-Sleep -Milliseconds 200 }
@@ -45,7 +50,7 @@ while ($v.Status.RunningState -eq 1) { Start-Sleep -Milliseconds 200 }
         exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${ps1File}"`, {
           timeout: 60000, windowsHide: true,
         }, () => {
-          try { unlinkSync(txtFile) } catch {}
+          try { unlinkSync(outFile) } catch {}
           try { unlinkSync(ps1File) } catch {}
         })
       })
