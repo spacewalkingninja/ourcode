@@ -42,8 +42,8 @@ for ($i=0;$i -lt $voices.Count;$i++) {
 }
 $t = (Get-Content "${outFile}" -Encoding UTF8 -Raw).Trim()
 $v.Rate = -1
-$v.Speak($t) | Out-Null
-while ($v.Status.RunningState -eq 1) { Start-Sleep -Milliseconds 200 }
+$v.Speak($t)
+$v.WaitUntilDone(-1)
 `
         writeFileSync(ps1File, psBody, "utf8")
 
