@@ -1,8 +1,11 @@
 import { exec } from "child_process"
 import { writeFileSync, unlinkSync } from "fs"
 import { tmpdir } from "os"
+import { fileURLToPath } from "url"
+import { dirname, join } from "path"
 
-const cyrifyPath = "C:\\Users\\kristian\\.config\\opencode\\cyrify.py"
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const cyrifyPath = join(__dirname, "cyrify.py")
 
 const SpeakRunglishPlugin = async () => {
   return {
