@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+Thumbs.db
+*.wav
+runglish_*.txt
+runglish_*.ps1

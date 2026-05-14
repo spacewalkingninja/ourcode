@@ -1,0 +1,12 @@
+{
+  "name": "speak-runglish",
+  "version": "1.0.0",
+  "description": "Speaks responses in Runglish (Cyrillic phonetic approximation) through Microsoft Pavel voice",
+  "main": "speak-runglish.mjs",
+  "exports": {
+    ".": "./speak-runglish.mjs",
+    "./server": "./speak-runglish.mjs"
+  },
+  "keywords": ["opencode", "plugin"],
+  "license": "MIT"
+}
