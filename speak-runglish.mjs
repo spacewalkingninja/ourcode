@@ -7,6 +7,52 @@ import { dirname, join } from "path"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const cyrifyPath = join(__dirname, "cyrify.py")
 
+// Characters to replace with English words (will be cyrillified by cyrify.py)
+// Exceptions kept as-is: + - / ± % # 3 , . ! ?
+const CHAR_MAP = {
+  "0": " zero ", "1": " one ", "2": " two ", "4": " four ",
+  "5": " five ", "6": " six ", "7": " seven ", "8": " eight ", "9": " nine ",
+  "_": " underscore ",
+  "$": " dollar ", "&": " and ",
+  "(": " open paren ", ")": " close paren ",
+  "{": " open curly ", "}": " close curly ",
+  "[": " open bracket ", "]": " close bracket ",
+}
+
+function _replaceChars(segment) {
+  // * → silent removal
+  let s = segment.replace(/\*/g, "")
+  // . between digits → " dot " (before general . removal)
+  s = s.replace(/(\d)\.(\d)/g, "$1 dot $2")
+  // ! ? , . : # → silent (not spoken)
+  s = s.replace(/[!?,.:#]/g, "")
+
+  // All dashes → " dash " (including -, –, —)
+  s = s.replace(/[–—-]/g, " dash ")
+  s = s.replace(/-/g, " dash ")
+
+  // Named chars
+  for (const [ch, word] of Object.entries(CHAR_MAP)) {
+    s = s.split(ch).join(word)
+  }
+
+  // Collapse multiple spaces
+  s = s.replace(/\s+/g, " ").trim()
+  return s
+}
+
+function _prepareForSpeech(text) {
+  // Preserve inline code spans: split on backtick-delimited segments
+  // Even indices = outside code (apply replacements), odd = inside (passthrough)
+  const parts = text.split(/(`[^`]*`)/)
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      parts[i] = _replaceChars(parts[i])
+    }
+  }
+  return parts.join("")
+}
+
 const SpeakRunglishPlugin = async () => {
   return {
     "experimental.text.complete": async (_input, output) => {
@@ -14,15 +60,17 @@ const SpeakRunglishPlugin = async () => {
       if (!text || text.length < 10) return
       if (text.startsWith("```") || text.startsWith("`")) return
 
+      // Pre-process: replace special chars with speakable words
+      const prepared = _prepareForSpeech(text)
+      if (!prepared) return
+
       const stamp = Date.now()
       const inFile = `${tmpdir()}\\runglish_in_${stamp}.txt`
       const outFile = `${tmpdir()}\\runglish_out_${stamp}.txt`
       const ps1File = `${tmpdir()}\\runglish_${stamp}.ps1`
 
-      // Write English text to file (no CLI length limits)
-      writeFileSync(inFile, text, "utf8")
+      writeFileSync(inFile, prepared, "utf8")
 
-      // Pipe through cyrify.py via file
       exec(`python "${cyrifyPath}" --file "${inFile}"`, {
         timeout: 5000, windowsHide: true, encoding: "utf8",
       }, (err, stdout) => {
