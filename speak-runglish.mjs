@@ -9,6 +9,7 @@ const cyrifyPath = join(__dirname, "cyrify.py")
 
 // Characters to replace with English words (will be cyrillified by cyrify.py)
 // Exceptions kept as-is: + - / ± % # 3 , . ! ?
+// , . ! ? - – — kept in text → SAPI natural pauses
 const CHAR_MAP = {
   "0": " zero ", "1": " one ", "2": " two ", "4": " four ",
   "5": " five ", "6": " six ", "7": " seven ", "8": " eight ", "9": " nine ",
@@ -22,14 +23,12 @@ const CHAR_MAP = {
 function _replaceChars(segment) {
   // * → silent removal
   let s = segment.replace(/\*/g, "")
-  // . between digits → " dot " (before general . removal)
+  // . between digits → " dot "
   s = s.replace(/(\d)\.(\d)/g, "$1 dot $2")
-  // ! ? , . : # → silent (not spoken)
-  s = s.replace(/[!?,.:#]/g, "")
+  // : # → silent
+  s = s.replace(/[:#]/g, "")
 
-  // All dashes → " dash " (including -, –, —)
-  s = s.replace(/[–—-]/g, " dash ")
-  s = s.replace(/-/g, " dash ")
+  // Dashes → kept in text (SAPI provides natural pauses)
 
   // Named chars
   for (const [ch, word] of Object.entries(CHAR_MAP)) {
